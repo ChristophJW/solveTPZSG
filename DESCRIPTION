@@ -7,7 +7,9 @@ Authors@R: c(person("Christoph", "Woelfle", role = c("aut", "cph"),
             person("Jochen", "Staudacher", role = c("aut","cre", "cph"),
                      email = "jochen.staudacher@hs-kempten.de"))
 Maintainer: Jochen Staudacher <jochen.staudacher@hs-kempten.de>
-Description: What the package does (one paragraph).
+Description: Solving two-person sero-sum games by input the game matrix. 
+The output is the value of the game, saddlepoints, and the strategies of both players. 
+Additionally plot the graphical solution of 2xn and mx2 matrix.
 Depends: R (>= 3.4.3)
 License: GPL-2
 Encoding: UTF-8
@@ -15,3 +17,4 @@ LazyData: true
 
 Imports:
     lpSolve
+    ggplot2
