@@ -20,12 +20,15 @@ game_function <- function() {
   #A = matrix(c(0,5,-2,-3,0,4,6,-4,0), nrow = 3, byrow = TRUE);
 
   #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
-  A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
-  out <- list()
+  #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
 
+  print(A)
   if(!is.matrix(A) || dim(A)[1] < 2 || dim(A)[2] < 2){
     stop("Please enter a matrix!")
+    #Vektoren auch behandeln
   }
+  out <- list()
+
 
 
   minRow = getMaxOfRowMin(A)
@@ -46,7 +49,7 @@ game_function <- function() {
 }
 
 generateMatrixFromSaddleVector <- function(vector){
-  return(matrix(vector, ncol = 2))
+  return(matrix(vector, ncol = 2, byrow = TRUE))
 }
 
 getMaxOfRowMin <- function(matrix) {
@@ -68,14 +71,12 @@ getMinOfColMax <- function(matrix) {
 }
 
 getSaddlePointsOfGame <- function(matrix, maxCol) {
-  print(matrix)
   numCol = ncol(matrix)
   numRow = nrow(matrix)
   index = 1;
   saddle <- c()
-  for(j in 1:numCol){
-    for(i in 1:numRow){
-      print(matrix[i,j])
+  for(i in 1:numRow){
+    for(j in 1:numCol){
       if(maxCol == matrix[i,j]) {
         if(min(matrix[i,]) == max(matrix[,j])) {
           saddle[index] <- i
@@ -117,10 +118,12 @@ drawLine <- function(x, a, b) {
 
 plotSolution <- function(){
 
+  #Dominant dicker Strich
+  #Farben + Legende
 
   A = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
-  A = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
-  A = matrix(c(1,5,4,4,6,2), ncol = 2, byrow = TRUE);
+  #A = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
+  #A = matrix(c(1,5,4,4,6,2), ncol = 2, byrow = TRUE);
   #A = matrix(c(-1,1,1,-1), nrow = 2, byrow = TRUE);
   if(!is.matrix(A) || (dim(A)[1] > 2 & dim(A)[2] > 2)){
     stop("Enter 2xn or mx2 matrix!")
