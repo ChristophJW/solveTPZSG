@@ -19,13 +19,22 @@ game_function <- function() {
   #A = matrix(c(1,2,3,3,6,2,6,1,3,3,3,1,3,6,2,3,3,6,2,1,6,3,2,1,3), nrow = 5, byrow = TRUE);
   #A = matrix(c(0,5,-2,-3,0,4,6,-4,0), nrow = 3, byrow = TRUE);
 
+  A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
   #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
-  #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
+
+  #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 1, byrow = TRUE);
+
+  #A = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
+  A = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
+
+
+  print(A)
+  if(!is.matrix(A)){
+    stop("Please enter a matrix!")
+    #Vektoren auch behandeln
+  }
   out <- list()
 
-  if(!is.matrix(A) || dim(A)[1] < 2 || dim(A)[2] < 2){
-    stop("Please enter a matrix!")
-  }
 
 
   minRow = getMaxOfRowMin(A)
@@ -45,7 +54,7 @@ game_function <- function() {
 }
 
 generateMatrixFromSaddleVector <- function(vector){
-  return(matrix(vector, ncol = 2))
+  return(matrix(vector, ncol = 2, byrow = TRUE))
 }
 
 getMaxOfRowMin <- function(matrix) {
@@ -67,14 +76,12 @@ getMinOfColMax <- function(matrix) {
 }
 
 getSaddlePointsOfGame <- function(matrix, maxCol) {
-  print(matrix)
   numCol = ncol(matrix)
   numRow = nrow(matrix)
   index = 1;
   saddle <- c()
-  for(j in 1:numCol){
-    for(i in 1:numRow){
-      print(matrix[i,j])
+  for(i in 1:numRow){
+    for(j in 1:numCol){
       if(maxCol == matrix[i,j]) {
         if(min(matrix[i,]) == max(matrix[,j])) {
           saddle[index] <- i
@@ -88,11 +95,11 @@ getSaddlePointsOfGame <- function(matrix, maxCol) {
   return(saddle)
 }
 
-solveLinearProgram <- function(gameMatrix, MinMax){
+solveLinearProgram <- function(gameMatrix, minmax){
   ncol = ncol(gameMatrix)
   nrow = nrow(gameMatrix)
 
-  if(MinMax == "max") {
+  if(minmax == "max") {
     operator = "<="
     gameMatrix = t(-gameMatrix)
   } else {
@@ -107,46 +114,81 @@ solveLinearProgram <- function(gameMatrix, MinMax){
   f.dir <- c("==",rep(operator, nrow(gameMatrix)-1 ))
   f.rhs <- c(1,rep(0, nrow(gameMatrix)-1 ))
 
-  return(lp(MinMax, f.obj, f.con, f.dir, f.rhs)$solution)
+  return(lp(minmax, f.obj, f.con, f.dir, f.rhs)$solution)
 }
+
 
 drawLine <- function(x, a, b) {
   return(a*x + b*(1-x))
 }
 
-plotSolution <- function(){
+drawResLine <- function(x, matrix, minOrMax){
+  resData <- c()
+  minResData <- c()
+  for(i in 1:nrow(matrix)){
+    resData <- cbind( resData, c(t(data.matrix(drawLine(x, matrix[i,1], matrix[i,2])))))
+  }
+  if(minOrMax == 'min'){
+    for(i in 1:nrow(resData)){
+      minResData <- cbind( minResData, c(min(resData[i,])))
+    }
+  } else {
+    for(i in 1:nrow(resData)){
+      minResData <- cbind( minResData, c(max(resData[i,])))
+    }
+  }
+  return(as.numeric(minResData))
+}
 
 
-  A = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
-  A = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
-  A = matrix(c(1,5,4,4,6,2), ncol = 2, byrow = TRUE);
-  #A = matrix(c(-1,1,1,-1), nrow = 2, byrow = TRUE);
-  if(!is.matrix(A) || (dim(A)[1] > 2 & dim(A)[2] > 2)){
+
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+
+
+plotSolution <- function(matrix){
+  if(!is.matrix(matrix) || (dim(matrix)[1] > 2 & dim(matrix)[2] > 2)){
     stop("Enter 2xn or mx2 matrix!")
   }
-  p <-  ggplot2::ggplot(data = data.frame(x = 0, y = 0), aes(x, y), mapping = aes(x = x, y = y))
-  p <- p + ggplot2::theme_classic()
-  if(nrow(A)>ncol(A)){
-    for(i in 1:nrow(A)){
-      p <- p + ggplot2::stat_function(aes(y=0),fun = drawLine, args = list(A[i,1], A[i,2]))
-    }
+
+  cols = gg_color_hue(nrow(matrix))
+  colorPalette = unlist(strsplit(cols, " "))
+
+  if(ncol(matrix) > nrow(matrix)){
+    solveLP = solveLinearProgram(matrix, 'max')
+    matrix = t(matrix)
+    minOrMax <- 'min'
   } else {
-    for(i in 1:ncol(A)){
-      p <- p + ggplot2::stat_function(aes(y=0),fun = drawLine, args = list(A[1,i], A[2,i]))
-    }
+    solveLP = solveLinearProgram(matrix, 'min')
+    minOrMax <- 'max'
   }
 
-  if(nrow(A)>ncol(A)){
-    solveLP = solveLinearProgram(A, "min")
-  } else {
-    solveLP = solveLinearProgram(A, "max")
+
+  p <-  ggplot2::ggplot(data = data.frame(x = 0), aes(colour=Strategie))
+  p <- p + ggplot2::theme_classic()
+
+  for(i in 1:nrow(matrix)){
+    p <- p + ggplot2::stat_function(fun = drawLine, args = list(matrix[i,1], matrix[i,2]), aes(color = "Normal"))
+    #p <- p + ggplot2::stat_function(colour = cols[i], fun = drawLine, args = list(matrix[i,1], matrix[i,2]))
   }
+  p <- p + ggplot2::stat_function(aes(y=0),size = 1.2, colour = "black", fun = drawResLine, args = list(matrix, minOrMax))
+
+
 
   p <- p + ggplot2::geom_hline(yintercept=solveLP[1], linetype="dashed", aes(test="Game value2"))
   p <- p + ggplot2::geom_vline(xintercept=solveLP[2], linetype="dashed", aes(test="Game value2"))
-  p <- p + ggplot2::scale_y_continuous(sec.axis = dup_axis())
+  p <- p + ggplot2::scale_y_continuous(sec.axis = dup_axis()) + scale_colour_manual(values = colorPalette)
   p <- p + ggplot2::xlim(0,1)
   p <- p + ggplot2::labs(y = "", x = "")
+  return(p)
+}
 
-  plot(p)
+plot <- function() {
+  matrix = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
+  matrix = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
+  #matrix = matrix(c(1,4,3,0), ncol = 2, byrow = TRUE);
+  plotSolution(matrix)
 }
