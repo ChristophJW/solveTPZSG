@@ -21,9 +21,10 @@ game_function <- function() {
 
   #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
   #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
+  A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 1, byrow = TRUE);
 
   print(A)
-  if(!is.matrix(A) || dim(A)[1] < 2 || dim(A)[2] < 2){
+  if(!is.matrix(A)){
     stop("Please enter a matrix!")
     #Vektoren auch behandeln
   }
@@ -116,27 +117,36 @@ drawLine <- function(x, a, b) {
   return(a*x + b*(1-x))
 }
 
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
 plotSolution <- function(){
 
   #Dominant dicker Strich
   #Farben + Legende
-
+  colors = factor(c( 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3))
   A = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
   #A = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
   #A = matrix(c(1,5,4,4,6,2), ncol = 2, byrow = TRUE);
   #A = matrix(c(-1,1,1,-1), nrow = 2, byrow = TRUE);
+  A = matrix(c(2,4,2,5,2,6,2,3,2,3,5,2), nrow = 2, byrow = TRUE);
   if(!is.matrix(A) || (dim(A)[1] > 2 & dim(A)[2] > 2)){
     stop("Enter 2xn or mx2 matrix!")
   }
+
   p <-  ggplot2::ggplot(data = data.frame(x = 0, y = 0), aes(x, y), mapping = aes(x = x, y = y))
   p <- p + ggplot2::theme_classic()
   if(nrow(A)>ncol(A)){
+    cols = gg_color_hue(nrow(A))
     for(i in 1:nrow(A)){
-      p <- p + ggplot2::stat_function(aes(y=0),fun = drawLine, args = list(A[i,1], A[i,2]))
+      p <- p + ggplot2::stat_function(aes(y=0, colour = "mean = 0 / sd =1") ,colour = cols[i], fun = drawLine, args = list(A[i,1], A[i,2]))
     }
   } else {
+    cols = gg_color_hue(ncol(A))
     for(i in 1:ncol(A)){
-      p <- p + ggplot2::stat_function(aes(y=0),fun = drawLine, args = list(A[1,i], A[2,i]))
+      p <- p + ggplot2::stat_function(aes(y=0, colour = "mean = 0 / sd =1"), colour = cols[i], fun = drawLine, args = list(A[1,i], A[2,i]))
     }
   }
 
