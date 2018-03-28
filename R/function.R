@@ -12,7 +12,7 @@ game_function <- function() {
   #A = matrix(c(2,3,4,-3,4,-5,3,-5,6), nrow = 3, byrow = TRUE);
   #A = matrix(c(0,1,1,1,1,-1,1,-2,1,1,-1,1,1,2,-1,1), nrow = 4, byrow = TRUE);
   #A = matrix(c(-1,1,-2,1,-1,1,2,-1,1), nrow = 3, byrow = TRUE);
-  #A = matrix(c(1,-1,-2,-1,1,1,2,-1,-1), nrow = 3, byrow = TRUE);
+  A = matrix(c(1,-1,-2,-1,1,1,2,-1,-1), nrow = 3, byrow = TRUE);
   #A = "asdfsdf"
   #A = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
   #A = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
@@ -20,7 +20,7 @@ game_function <- function() {
   #A = matrix(c(0,5,-2,-3,0,4,6,-4,0), nrow = 3, byrow = TRUE);
 
   #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
-  A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
+  #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
   out <- list()
 
   if(!is.matrix(A) || dim(A)[1] < 2 || dim(A)[2] < 2){
@@ -30,16 +30,15 @@ game_function <- function() {
 
   minRow = getMaxOfRowMin(A)
   maxCol = getMinOfColMax(A)
-
   if(minRow == maxCol){
-    out['value'] <- list(value = minRow)
     out['saddlePoints'] <- list(saddlePoints = generateMatrixFromSaddleVector(getSaddlePointsOfGame(A, maxCol)))
+    out['value'] <- list(value = minRow)
   } else {
-    solutionA = solveLinearProgramm(A, "max");
+    solutionA = solveLinearProgram(A, "max");
     out['value'] <- list(value = solutionA[1])
     out['saddlePoints'] <- list(saddlePoints = NULL)
     out['strategyA'] <- list(strategyA = solutionA[-1])
-    solutionB = solveLinearProgramm(A, "min");
+    solutionB = solveLinearProgram(A, "min");
     out['strategyB'] <- list(strategyB = solutionB[-1])
   }
   return(out)
@@ -89,7 +88,7 @@ getSaddlePointsOfGame <- function(matrix, maxCol) {
   return(saddle)
 }
 
-solveLinearProgramm <- function(gameMatrix, MinMax){
+solveLinearProgram <- function(gameMatrix, MinMax){
   ncol = ncol(gameMatrix)
   nrow = nrow(gameMatrix)
 
@@ -138,9 +137,9 @@ plotSolution <- function(){
   }
 
   if(nrow(A)>ncol(A)){
-    solveLP = solveLinearProgramm(A, "min")
+    solveLP = solveLinearProgram(A, "min")
   } else {
-    solveLP = solveLinearProgramm(A, "max")
+    solveLP = solveLinearProgram(A, "max")
   }
 
   p <- p + ggplot2::geom_hline(yintercept=solveLP[1], linetype="dashed", aes(test="Game value2"))
