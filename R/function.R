@@ -27,7 +27,6 @@ game_function <- function() {
   #A = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
   A = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
 
-
   print(A)
   if(!is.matrix(A)){
     stop("Please enter a matrix!")
@@ -118,26 +117,39 @@ solveLinearProgram <- function(gameMatrix, minmax){
 }
 
 
+computeIntersection <- function(a, b, c, d){
+  if((a-c-b+d) == 0)
+    return(NA)
+  return((d-b)/(a-c-b+d))
+}
+
 drawLine <- function(x, a, b) {
   return(a*x + b*(1-x))
 }
 
-drawResLine <- function(x, matrix, minOrMax){
+drawResLine <- function(matrix){
   resData <- c()
-  minResData <- c()
-  for(i in 1:nrow(matrix)){
-    resData <- cbind( resData, c(t(data.matrix(drawLine(x, matrix[i,1], matrix[i,2])))))
-  }
-  if(minOrMax == 'min'){
-    for(i in 1:nrow(resData)){
-      minResData <- cbind( minResData, c(min(resData[i,])))
-    }
-  } else {
-    for(i in 1:nrow(resData)){
-      minResData <- cbind( minResData, c(max(resData[i,])))
+  intersections <- c()
+  index <- 1
+  for(i in 1:(nrow(matrix))){
+    for(j in 1:(nrow(matrix))){
+      intersection <- computeIntersection(matrix[i,1], matrix[i,2], matrix[j,1], matrix[j,2])
+      if(!(is.na(intersection) || is.element(intersection, intersections))) {
+        intersections[index] <- intersection
+        index <- index + 1
+      }
     }
   }
-  return(as.numeric(minResData))
+  intersections <- sort(intersections)
+  functionValue <- c()
+  minFunctionValue <- c()
+  for(i in 1:length(intersections)){
+    for(j in 1:nrow(matrix)){
+      functionValue[j] <- drawLine(intersections[i], matrix[j,1], matrix[j,2])
+    }
+    minFunctionValue[i] <- min(functionValue)
+  }
+  return(minFunctionValue)
 }
 
 
@@ -154,8 +166,7 @@ plotSolution <- function(matrix){
     stop("Enter 2xn or mx2 matrix!")
   }
 
-  cols = gg_color_hue(nrow(matrix))
-  colorPalette = unlist(strsplit(cols, " "))
+
 
   if(ncol(matrix) > nrow(matrix)){
     solveLP = solveLinearProgram(matrix, 'max')
@@ -166,29 +177,45 @@ plotSolution <- function(matrix){
     minOrMax <- 'max'
   }
 
+  colorPalette = unlist(strsplit(gg_color_hue(nrow(matrix)), " "))
+  colorPalette[nrow(matrix)+1] <- "#000000"
 
-  p <-  ggplot2::ggplot(data = data.frame(x = 0), aes(colour=Strategie))
-  p <- p + ggplot2::theme_classic()
+  p <- ggplot(data.frame(x=c(0,1)), mapping = aes(x = x)) + theme_classic()
 
+  p <- p + scale_y_continuous(sec.axis = dup_axis())
   for(i in 1:nrow(matrix)){
-    p <- p + ggplot2::stat_function(fun = drawLine, args = list(matrix[i,1], matrix[i,2]), aes(color = "Normal"))
-    #p <- p + ggplot2::stat_function(colour = cols[i], fun = drawLine, args = list(matrix[i,1], matrix[i,2]))
+    label <- paste("e",i,"=",matrix[i,1],"*x +",matrix[i,2],"*(1-x)" )
+    p <- p + stat_function(fun=drawLine, args = list(matrix[i,1], matrix[i,2]), geom="line", aes_(color=label))
   }
-  p <- p + ggplot2::stat_function(aes(y=0),size = 1.2, colour = "black", fun = drawResLine, args = list(matrix, minOrMax))
+  if(ncol(matrix) > nrow(matrix)){
+    for (y in drawResLine(matrix)) {
+      print(y)
+      #p <- p + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "segment"), data = df)
+    }
 
+    #p <- p + ggplot2::stat_function(fun = drawResLine, args = list(matrix, minOrMax), geom="line", aes_(color="max payments"))
+  } else {
+    redrawValues = drawResLine(matrix)
+    for (i in 1:length(redrawValues)) {
+      p <- p + geom_segment(aes(x = 0, y = 0, xend = 1, yend = redrawValues[i], colour = "segment"))
+    }
+    # p <- p + ggplot2::stat_function(fun = drawResLine, args = list(matrix, minOrMax), geom="line", aes_(color="min payoff"))
+  }
 
-
+  p <- p + scale_colour_manual("Strategies", values=colorPalette)
   p <- p + ggplot2::geom_hline(yintercept=solveLP[1], linetype="dashed", aes(test="Game value2"))
   p <- p + ggplot2::geom_vline(xintercept=solveLP[2], linetype="dashed", aes(test="Game value2"))
-  p <- p + ggplot2::scale_y_continuous(sec.axis = dup_axis()) + scale_colour_manual(values = colorPalette)
-  p <- p + ggplot2::xlim(0,1)
   p <- p + ggplot2::labs(y = "", x = "")
   return(p)
 }
 
+text <- function() {
+  return('asdffs')
+}
+
 plot <- function() {
   matrix = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
-  matrix = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
+  #matrix = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
   #matrix = matrix(c(1,4,3,0), ncol = 2, byrow = TRUE);
   plotSolution(matrix)
 }
