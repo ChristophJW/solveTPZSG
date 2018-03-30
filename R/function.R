@@ -1,53 +1,30 @@
-game_function <- function() {
-  A = matrix(c(-3,1,2,0,5,2,3,2,2,-3,1,-3,1,0,-2,2), nrow = 4, byrow = TRUE);
-  #A = matrix(c(2,3,4,-3,4,-5,3,-5,6), nrow = 3, byrow = TRUE);
-  #A = matrix(c(3,3,5,1,-1,7,0,-2,4), nrow = 3, byrow = TRUE);
-  #A = matrix(c(4,3,5,1,2,-1,0,-2,0,-1,-4,1,4,3,5,-3,0,-1,0,-2,3,2,-7,3,8), nrow = 5, byrow = TRUE);
-  #A = matrix(c(4,1,-3,3,2,5,0,1,6), nrow = 3, byrow = TRUE);
-  #A = matrix(c(3,1,1,0,0,1,2,0,1,0,2,1,3,1,2,2), nrow = 4, byrow = TRUE);
-  #A = matrix(c(0,-1,1,1,0,-1,-1,1,0), nrow = 3, byrow = TRUE);#Rock/Paper/Scissors
-  #A = matrix(c(2,1,3,3,2,1,1,3,2), nrow = 3, byrow = TRUE);#Rock/Paper/Scissors
-  #A = matrix(c(-2,1,2,2,-1,0,1,0,-2), nrow = 3, byrow = TRUE);#https://www.usna.edu/Users/math/dphillip/sa305.s13/uhan-game-theory.pdf
-  #A = matrix(c(-1,1,1,-1), nrow = 2, byrow = TRUE);
-  #A = matrix(c(2,3,4,-3,4,-5,3,-5,6), nrow = 3, byrow = TRUE);
-  #A = matrix(c(0,1,1,1,1,-1,1,-2,1,1,-1,1,1,2,-1,1), nrow = 4, byrow = TRUE);
-  #A = matrix(c(-1,1,-2,1,-1,1,2,-1,1), nrow = 3, byrow = TRUE);
-  A = matrix(c(1,-1,-2,-1,1,1,2,-1,-1), nrow = 3, byrow = TRUE);
-  #A = "asdfsdf"
-  #A = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
-  #A = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
-  #A = matrix(c(1,2,3,3,6,2,6,1,3,3,3,1,3,6,2,3,3,6,2,1,6,3,2,1,3), nrow = 5, byrow = TRUE);
-  #A = matrix(c(0,5,-2,-3,0,4,6,-4,0), nrow = 3, byrow = TRUE);
-
-  A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
-  #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 3, byrow = TRUE); #'4 Sattelpunkte'
-
-  #A = matrix(c(5,3,5,3,2,1,-1,-2,4,3,5,3), nrow = 1, byrow = TRUE);
-
-  #A = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
-  A = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
-
-  print(A)
-  if(!is.matrix(A)){
+game_function <- function(matrix) {
+  if(!is.matrix(matrix)){
     stop("Please enter a matrix!")
-    #Vektoren auch behandeln
   }
   out <- list()
-
-
-
-  minRow = getMaxOfRowMin(A)
-  maxCol = getMinOfColMax(A)
+  minRow = getMaxOfRowMin(matrix)
+  maxCol = getMinOfColMax(matrix)
   if(minRow == maxCol){
-    out['saddlePoints'] <- list(saddlePoints = generateMatrixFromSaddleVector(getSaddlePointsOfGame(A, maxCol)))
+    out['saddlePoints'] <- list(saddlePoints = generateMatrixFromSaddleVector(getSaddlePointsOfGame(matrix, maxCol)))
     out['value'] <- list(value = minRow)
   } else {
-    solutionA = solveLinearProgram(A, "max");
+    solution <- list()
+    solutionA = solveLinearProgram(matrix, "max");
+    solutionB = solveLinearProgram(matrix, "min");
+    if(length(solutionA[-1]) > length(solutionB[-1])) {
+      strategieMatrix <- matrix(NA, nrow=2, ncol=length(solutionA[-1]))
+      strategieMatrix[1,] <- solutionA[-1]
+      strategieMatrix[2,] <- solutionB[-1]
+      out['strategies'] <- list(stragedies = strategieMatrix)
+    } else {
+      strategieMatrix <- matrix(NA, nrow=2, ncol=length(solutionB[-1]))
+      strategieMatrix[1,] <- solutionA[-1]
+      strategieMatrix[2,] <- solutionB[-1]
+      out['strategies'] <- list(stragedies = strategieMatrix)
+    }
     out['value'] <- list(value = solutionA[1])
     out['saddlePoints'] <- list(saddlePoints = NULL)
-    out['strategyA'] <- list(strategyA = solutionA[-1])
-    solutionB = solveLinearProgram(A, "min");
-    out['strategyB'] <- list(strategyB = solutionB[-1])
   }
   return(out)
 }
@@ -94,28 +71,27 @@ getSaddlePointsOfGame <- function(matrix, maxCol) {
   return(saddle)
 }
 
-solveLinearProgram <- function(gameMatrix, minmax){
-  ncol = ncol(gameMatrix)
-  nrow = nrow(gameMatrix)
+solveLinearProgram <- function(matrix, minmax){
+  ncol = ncol(matrix)
+  nrow = nrow(matrix)
 
   if(minmax == "max") {
     operator = "<="
-    gameMatrix = t(-gameMatrix)
+    matrix = t(-matrix)
   } else {
     operator = ">="
-    gameMatrix = -gameMatrix
+    matrix = -matrix
   }
 
-  gameMatrix <- rbind(c(rep(1, ncol(gameMatrix))), gameMatrix)
-  gameMatrix <- cbind(c(0,rep(1, nrow(gameMatrix)-1 )), gameMatrix)
-  f.obj <- c(1,rep(0, ncol(gameMatrix)-1 ))
-  f.con <- gameMatrix
-  f.dir <- c("==",rep(operator, nrow(gameMatrix)-1 ))
-  f.rhs <- c(1,rep(0, nrow(gameMatrix)-1 ))
+  matrix <- rbind(c(rep(1, ncol(matrix))), matrix)
+  matrix <- cbind(c(0,rep(1, nrow(matrix)-1 )), matrix)
+  f.obj <- c(1,rep(0, ncol(matrix)-1 ))
+  f.con <- matrix
+  f.dir <- c("==",rep(operator, nrow(matrix)-1 ))
+  f.rhs <- c(1,rep(0, nrow(matrix)-1 ))
 
   return(lp(minmax, f.obj, f.con, f.dir, f.rhs)$solution)
 }
-
 
 computeIntersection <- function(a, b, c, d){
   if((a-c-b+d) == 0)
@@ -127,8 +103,14 @@ drawLine <- function(x, a, b) {
   return(a*x + b*(1-x))
 }
 
-drawResLine <- function(matrix){
-  resData <- c()
+drawMinOrMaxLine <- function(matrix, minmax){
+  intersections <- getAllIntersections(matrix)
+  values = getMinOrMaxFunctionsValueForIntersections(matrix, intersections, minmax)
+  offsetDataFrame <- data.frame(x=values[,1], y=values[,2], xend=values[,3], yend=values[,4])
+  return(offsetDataFrame)
+}
+
+getAllIntersections <- function(matrix){
   intersections <- c()
   index <- 1
   for(i in 1:(nrow(matrix))){
@@ -140,82 +122,97 @@ drawResLine <- function(matrix){
       }
     }
   }
-  intersections <- sort(intersections)
-  functionValue <- c()
-  minFunctionValue <- c()
+  intersections[index] = 0
+  intersections[index+1] = 1
+  return(sort(intersections))
+}
+
+getMinOrMaxFunctionsValueForIntersections <- function(matrix, intersections, minmax){
+  functionValuesForIntersection <- c()
+  minOrMaxFunctionsValue <- matrix(NA, ncol = 4, nrow = length(intersections))
   for(i in 1:length(intersections)){
     for(j in 1:nrow(matrix)){
-      functionValue[j] <- drawLine(intersections[i], matrix[j,1], matrix[j,2])
+      functionValuesForIntersection[j] <- drawLine(intersections[i], matrix[j,1], matrix[j,2])
     }
-    minFunctionValue[i] <- min(functionValue)
+    minOrMaxFunctionsValue[i,1] <- intersections[i]
+    if(minmax == 'max'){
+      minOrMaxFunctionsValue[i,2] <- min(functionValuesForIntersection)
+    } else {
+      minOrMaxFunctionsValue[i,2] <- max(functionValuesForIntersection)
+    }
   }
-  return(minFunctionValue)
+  for (i in 1:nrow(minOrMaxFunctionsValue)-1) {
+    minOrMaxFunctionsValue[i,3] <-  minOrMaxFunctionsValue[i+1,1]
+    minOrMaxFunctionsValue[i,4] <-  minOrMaxFunctionsValue[i+1,2]
+  }
+  return(minOrMaxFunctionsValue[-nrow(minOrMaxFunctionsValue),])
 }
-
-
-
-gg_color_hue <- function(n) {
-  hues = seq(15, 375, length = n + 1)
-  hcl(h = hues, l = 65, c = 100)[1:n]
-}
-
-
 
 plotSolution <- function(matrix){
-  if(!is.matrix(matrix) || (dim(matrix)[1] > 2 & dim(matrix)[2] > 2)){
+  print(matrix)
+  if(isMatrixOfRightDimention(matrix)){
     stop("Enter 2xn or mx2 matrix!")
   }
 
-
-
   if(ncol(matrix) > nrow(matrix)){
-    solveLP = solveLinearProgram(matrix, 'max')
-    matrix = t(matrix)
-    minOrMax <- 'min'
-  } else {
-    solveLP = solveLinearProgram(matrix, 'min')
     minOrMax <- 'max'
-  }
-
-  colorPalette = unlist(strsplit(gg_color_hue(nrow(matrix)), " "))
-  colorPalette[nrow(matrix)+1] <- "#000000"
-
-  p <- ggplot(data.frame(x=c(0,1)), mapping = aes(x = x)) + theme_classic()
-
-  p <- p + scale_y_continuous(sec.axis = dup_axis())
-  for(i in 1:nrow(matrix)){
-    label <- paste("e",i,"=",matrix[i,1],"*x +",matrix[i,2],"*(1-x)" )
-    p <- p + stat_function(fun=drawLine, args = list(matrix[i,1], matrix[i,2]), geom="line", aes_(color=label))
-  }
-  if(ncol(matrix) > nrow(matrix)){
-    for (y in drawResLine(matrix)) {
-      print(y)
-      #p <- p + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "segment"), data = df)
-    }
-
-    #p <- p + ggplot2::stat_function(fun = drawResLine, args = list(matrix, minOrMax), geom="line", aes_(color="max payments"))
+    solveLP = solveLinearProgram(matrix, minOrMax)
+    matrix = t(matrix)
   } else {
-    redrawValues = drawResLine(matrix)
-    for (i in 1:length(redrawValues)) {
-      p <- p + geom_segment(aes(x = 0, y = 0, xend = 1, yend = redrawValues[i], colour = "segment"))
-    }
-    # p <- p + ggplot2::stat_function(fun = drawResLine, args = list(matrix, minOrMax), geom="line", aes_(color="min payoff"))
+    minOrMax <- 'min'
+    solveLP = solveLinearProgram(matrix, minOrMax)
   }
-
-  p <- p + scale_colour_manual("Strategies", values=colorPalette)
-  p <- p + ggplot2::geom_hline(yintercept=solveLP[1], linetype="dashed", aes(test="Game value2"))
-  p <- p + ggplot2::geom_vline(xintercept=solveLP[2], linetype="dashed", aes(test="Game value2"))
-  p <- p + ggplot2::labs(y = "", x = "")
+  p <- ggplot(data.frame(x=c(0,1)), mapping = aes(x = x)) + theme_classic()
+  p <- p + scale_y_continuous(sec.axis = dup_axis())
+  p <- p + scale_colour_manual("Strategies", values=generateColors(nrow(matrix)))
+  for(i in 1:nrow(matrix)){
+    label <- generateFunctionName(i, matrix)
+    p <- p + stat_function(
+                    fun=drawLine,
+                    args = list(matrix[i,1], matrix[i,2]),
+                    geom="line",
+                    aes_(color=label)
+                    )
+  }
+  if(minOrMax == 'min') {
+    p <- p + ggplot2::geom_segment(
+                    data=drawMinOrMaxLine(matrix, minOrMax),
+                    aes(x = x, y = y, xend = xend, yend = yend, colour = "max payment")
+                    )
+  } else {
+    p <- p + ggplot2::geom_segment(
+                    data=drawMinOrMaxLine(matrix, minOrMax),
+                    aes(x = x, y = y, xend = xend, yend = yend, colour = "min payoff")
+                    )
+  }
+  p <- p + ggplot2::geom_hline(
+                    aes(yintercept=solveLP[1], linetype = paste("v =",format(round(solveLP[1], 5), nsmall = 5))),
+                    colour= 'gray'
+                    )
+  p <- p + ggplot2::geom_vline(
+                    aes(xintercept=solveLP[2],linetype = paste("x* = p* =",format(round(solveLP[2], 5), nsmall = 5))),
+                    colour= 'gray'
+                    )
+  p <- p + ggplot2::scale_linetype_manual(
+                    name = "Game Solution",
+                    values = c(3, 3),
+                    guide = guide_legend(override.aes = list(color = c("gray", "gray")))
+                    )
+  p <- p + ggplot2::labs(y = "v", x = "x")
   return(p)
 }
 
-text <- function() {
-  return('asdffs')
+isMatrixOfRightDimention <- function(matrix) {
+  return(!is.matrix(matrix) || (dim(matrix)[1] > 2 & dim(matrix)[2] > 2))
 }
 
-plot <- function() {
-  matrix = matrix(c(10,2,4,1,2,10,8,12), ncol = 4, byrow = TRUE);
-  #matrix = matrix(c(10,2,2,10,4,8,1,12), ncol = 2, byrow = TRUE);
-  #matrix = matrix(c(1,4,3,0), ncol = 2, byrow = TRUE);
-  plotSolution(matrix)
+generateColors <- function(numOfRows) {
+  hues = seq(15, 375, length = numOfRows + 1)
+  colors <- hcl(h = hues, l = 65, c = 100)[1:numOfRows]
+  colors[numOfRows+1] <- "#000000"
+  colors <- unlist(strsplit(colors, " "))
+}
+
+generateFunctionName <- function(i, matrix){
+  return(paste("e",i,"=",matrix[i,1],"*x +",matrix[i,2],"*(1-x)" ))
 }
