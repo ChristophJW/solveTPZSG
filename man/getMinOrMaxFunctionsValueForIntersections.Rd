@@ -14,7 +14,7 @@ getMinOrMaxFunctionsValueForIntersections(matrix, intersections, minmax)
 \item{minmax}{A string.}
 }
 \value{
-The vector of the intersection min/max function value tupel.
+The matrix of the intersection min/max function value tupel.
 }
 \description{
 Find the min or max functions value for each intersection

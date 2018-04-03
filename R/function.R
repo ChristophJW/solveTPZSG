@@ -135,6 +135,7 @@ solveLinearProgram <- function(matrix, minmax){
 #' @return The plot of the solution in a cartesian coordinate system with a legend.
 
 plotSolution <- function(matrix, rowOrCol='row'){
+  print(matrix)
   if(isMatrixOfRightDimention(matrix)){
     stop("Enter 2xn or mx2 matrix!")
   }
@@ -158,13 +159,14 @@ plotSolution <- function(matrix, rowOrCol='row'){
     minOrMax <- 'min'
     solveLP = solveLinearProgram(matrix, minOrMax)
   }
-  p <- ggplot(data.frame(x=c(0,1)), mapping = aes(x = x)) + theme_classic()
-  p <- p + scale_y_continuous(sec.axis = dup_axis())
-  p <- p + scale_colour_manual("Strategies", values=generateColors(nrow(matrix)))
+  p <- ggplot2::ggplot(data.frame(x=c(0,1)), mapping = aes(x = x))
+  p <- p + ggplot2::theme_classic()
+  p <- p + ggplot2::scale_y_continuous(sec.axis = dup_axis())
+  p <- p + ggplot2::scale_colour_manual("Strategies", values=generateColors(nrow(matrix)))
   for(i in 1:nrow(matrix)){
     label <- generateFunctionName(i, matrix)
-    p <- p + stat_function(
-                    fun=drawLine,
+    p <- p + ggplot2::stat_function(
+                    fun=computeLinearFunction,
                     args = list(matrix[i,1], matrix[i,2]),
                     geom="line",
                     aes_(color=label)
@@ -294,7 +296,7 @@ getAllIntersections <- function(matrix){
 #' @param matrix A matrix.
 #' @param intersections A vector.
 #' @param minmax A string.
-#' @return The vector of the intersection min/max function value tupel.
+#' @return The matrix of the intersection min/max function value tupel.
 
 getMinOrMaxFunctionsValueForIntersections <- function(matrix, intersections, minmax){
   functionValuesForIntersection <- c()
