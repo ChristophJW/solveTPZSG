@@ -117,15 +117,19 @@ solveLinearProgram <- function(matrix, minmax){
     operator = ">="
     matrix = -matrix
   }
-
+  print(matrix)
   matrix <- rbind(c(rep(1, ncol(matrix))), matrix)
+  print(matrix)
   matrix <- cbind(c(0,rep(1, nrow(matrix)-1 )), matrix)
+  print(matrix)
   f.obj <- c(1,rep(0, ncol(matrix)-1 ))
+  print(f.obj)
   f.con <- matrix
   f.dir <- c("==",rep(operator, nrow(matrix)-1 ))
   f.rhs <- c(1,rep(0, nrow(matrix)-1 ))
-
-  return(lp(minmax, f.obj, f.con, f.dir, f.rhs)$solution)
+  print(f.rhs)
+  print(lp(minmax, f.obj, f.con, f.dir, f.rhs)$duals)
+  #return(lp(minmax, f.obj, f.con, f.dir, f.rhs)$solution)
 }
 
 #' Plot the graphical solution of a 2xn or mx2 matrixgame
