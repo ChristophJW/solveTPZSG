@@ -20,18 +20,13 @@ solveGame <- function(matrix) {
     solution <- list()
     solutionA = solveLinearProgram(matrix, "max");
     solutionB = solveLinearProgram(matrix, "min");
-    if(length(solutionA[-1]) > length(solutionB[-1])) {
-      strategieMatrix <- matrix(NA, nrow=2, ncol=length(solutionA[-1]))
-      strategieMatrix[1,] <- solutionA[-1]
-      strategieMatrix[2,] <- solutionB[-1]
-      out['strategies'] <- list(stragedies = strategieMatrix)
-    } else {
-      strategieMatrix <- matrix(NA, nrow=2, ncol=length(solutionB[-1]))
-      strategieMatrix[1,] <- solutionA[-1]
-      strategieMatrix[2,] <- solutionB[-1]
-      out['strategies'] <- list(stragedies = strategieMatrix)
-    }
-    out['value'] <- list(value = solutionA[1])
+    strategies <- list(solutionA[-1], solutionB[-1])
+    n <- max(sapply(strategies, length))
+    ll <- lapply(strategies, function(X) {
+      c(X, rep(NA, times = n - length(X)))
+    })
+    out['strategies'] <- list(t(do.call(cbind, ll)))
+    out['value'] <- list(value = round(solutionA[1],digits=5))
     out['saddlePoints'] <- list(saddlePoints = NULL)
   }
   return(out)
@@ -107,8 +102,9 @@ generateMatrixFromSaddleVector <- function(vector){
 #' @return The max or min value of the game and the probabilities of the players strategies.
 
 solveLinearProgram <- function(matrix, minmax){
-  ncol = ncol(matrix)
-  nrow = nrow(matrix)
+  minOfMatrix <- min(matrix)
+  if(minOfMatrix <= 0)
+    matrix <- matrix + (minOfMatrix*-1 +1)
 
   if(minmax == "max") {
     operator = "<="
@@ -117,19 +113,18 @@ solveLinearProgram <- function(matrix, minmax){
     operator = ">="
     matrix = -matrix
   }
-  print(matrix)
+
+
   matrix <- rbind(c(rep(1, ncol(matrix))), matrix)
-  print(matrix)
   matrix <- cbind(c(0,rep(1, nrow(matrix)-1 )), matrix)
-  print(matrix)
   f.obj <- c(1,rep(0, ncol(matrix)-1 ))
-  print(f.obj)
   f.con <- matrix
   f.dir <- c("==",rep(operator, nrow(matrix)-1 ))
   f.rhs <- c(1,rep(0, nrow(matrix)-1 ))
-  print(f.rhs)
-  print(lp(minmax, f.obj, f.con, f.dir, f.rhs)$duals)
-  #return(lp(minmax, f.obj, f.con, f.dir, f.rhs)$solution)
+  lpSolution <- lp(minmax, f.obj, f.con, f.dir, f.rhs)$solution
+  if(minOfMatrix <= 0)
+    lpSolution[1] <- lpSolution[1]-(minOfMatrix*-1 +1);
+  return(lpSolution)
 }
 
 #' Plot the graphical solution of a 2xn or mx2 matrixgame
@@ -139,8 +134,7 @@ solveLinearProgram <- function(matrix, minmax){
 #' @return The plot of the solution in a cartesian coordinate system with a legend.
 
 plotSolution <- function(matrix, rowOrCol='row'){
-  print(matrix)
-  if(isMatrixOfRightDimention(matrix)){
+  if(!isMatrixOfRightDimention(matrix)){
     stop("Enter 2xn or mx2 matrix!")
   }
 
@@ -207,10 +201,10 @@ plotSolution <- function(matrix, rowOrCol='row'){
 #' Check if the matrix has the right format of 2xn or mx2
 #' @name isMatrixOfRightDimention
 #' @param matrix A matrix.
-#' @return The TRUE if the matrix is of the right format or FALSE if not.
+#' @return TRUE if the matrix is of the right format or FALSE if not.
 
 isMatrixOfRightDimention <- function(matrix) {
-  return(!is.matrix(matrix) || (dim(matrix)[1] > 2 & dim(matrix)[2] > 2))
+  return(dim(matrix)[1] >= 2 & dim(matrix)[2] >= 2)
 }
 
 #' Generates random colors for the linear functions

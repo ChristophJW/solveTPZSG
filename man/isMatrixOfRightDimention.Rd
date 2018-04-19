@@ -10,7 +10,7 @@ isMatrixOfRightDimention(matrix)
 \item{matrix}{A matrix.}
 }
 \value{
-The TRUE if the matrix is of the right format or FALSE if not.
+TRUE if the matrix is of the right format or FALSE if not.
 }
 \description{
 Check if the matrix has the right format of 2xn or mx2
